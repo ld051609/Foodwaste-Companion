@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 dataset = './FAO-dataset.csv'
 df = pd.read_csv(dataset)
 
-def get_country_production_prediction_model(df, country):
+def get_country_production_prediction_model(df, country, year):
     filtered_df = df[df['Area'] == country]
     food_items = filtered_df['Item'].unique()
     my_list_dict = []
@@ -37,7 +37,7 @@ def get_country_production_prediction_model(df, country):
         model.fit(X_train_scaled, y)
 
         # Make predictions for a future year (e.g., 2025)
-        future_year = 2025
+        future_year = year
         predictions_scaled = model.predict(scaler.transform([[future_year]]))
         # print(f"Predicted value for {country} in {future_year} of {food_item}: {predictions_scaled[0]}")
 
