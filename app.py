@@ -1,24 +1,22 @@
-import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
-import requests
+from flask_session import Session
 from location import get_local_food_market, get_food_banks_nearby
 from food_api import generate_recipe
 from model import get_country_production_prediction_model
 from datetime import datetime
-
+import random
 app = Flask(__name__)
+
 CORS(app)
 
-@app.route('/')
-def index():
-    return 'Hello World'
+# Global variables
+produced_ingredients_recipe = []
+dietary_restrictions = []
 
 @app.route('/webhook', methods=['POST', 'GET'])
 def webhook():
     if request.method == 'POST':
-        ingredients_for_recipe = []
-        dietary_restrictions = []
         req = request.get_json(silent=True, force=True)
         if req is None:
             return jsonify({'fulfillmentText': 'Error: request is None'})
@@ -35,20 +33,103 @@ def webhook():
             street_address = address.get('street-address')
             print(address)
             market_info = get_local_food_market(street_address, city)
-            return jsonify({'fulfillmentText': f"Here are some local food markets nearby: {market_info}"})
+            fulfillment_messages = []
+            for info in market_info:
+                card_response = {
+                    "card": {
+                        "title": info['name'],
+                        "subtitle": "Local Market",
+                        "imageUri": info['image_url'],
+                        "buttons": [
+                            {
+                                "text": "More Info",
+                                "postback": info['maps_url']
+                            }
+                        ]
+                    }
+                }
+                fulfillment_messages.append(card_response)
+            
+            # Return the JSON response
+            return jsonify({"fulfillmentMessages": fulfillment_messages})
+
         
         elif action == 'food-banks':
             address = query_result['parameters']['location'][0]
             city = address.get('city')
             street_address = address.get('street-address')
             print(address)
-            food_banks = get_food_banks_nearby(street_address, city)
-            return jsonify({'fulfillmentText': f"Here are some food banks nearby: {food_banks}"})
-        elif action == 'recipe.recipe-custom':
-            ingredients = query_result['parameters']['food-items']
-            ingredients_for_recipe.append(ingredient for ingredient in ingredients)
-            dish_name, ingredient_list, dish_image, dish_url = generate_recipe(ingredients_for_recipe, dietary_restrictions)
-            return {
+            market_info = get_local_food_market(street_address, city)
+            fulfillment_messages = []
+            for info in market_info:
+                card_response = {
+                    "card": {
+                        "title": info['name'],
+                        "subtitle": "Local Market",
+                        "imageUri": info['image_url'],
+                        "buttons": [
+                            {
+                                "text": "More Info",
+                                "postback": info['maps_url']
+                            }
+                        ]
+                    }
+                }
+                fulfillment_messages.append(card_response)
+            
+            # Return the JSON response
+            return jsonify({"fulfillmentMessages": fulfillment_messages})
+        
+        elif action == 'recipe - location':
+            country = query_result['parameters']['geo-country']
+            year = datetime.now().year
+            produced_ingredients = get_country_production_prediction_model(country, year)
+            if produced_ingredients is None:
+                return jsonify({'fulfillmentText': f"Sorry, no data available for {country}. Please try again."})
+            
+            # Clear previous data and store new data
+            if len(produced_ingredients_recipe) > 0:
+                produced_ingredients_recipe.clear
+            produced_ingredients_recipe.extend(produced_ingredients)
+
+            items = ', '.join([item for item in produced_ingredients]) 
+            return jsonify({
+                'fulfillmentText': f"Top 3 food items with the highest predicted production value in {year} of {country}: {items}. To help with creating waste-free recipes, please provide ONE dietary restriction (i.e. gluten-free, vegetarian, sugar-free), or type 'no'."})
+
+        elif action == 'recipe - dietaryRestrictions':
+            # Clear previous data and store new data
+            if len(dietary_restrictions) > 0:
+                dietary_restrictions.clear
+            
+            dietary_restrictions.extend(query_result['parameters']['food-restriction'])
+            return jsonify({'fulfillmentText': 'Please provide ONE more ingredient that you want to combine with. If no, please type "no".'})
+        
+        elif action == 'recipe - generateCustomRecipe':
+            
+            print(f'produced_ingredients_recipe: {produced_ingredients_recipe}')
+            print(f'dietary_restrictions: {dietary_restrictions}')
+
+            # Random to get one of the top 3 produced ingredients
+            new_produced_ingredients_recipe = [x.split()[0] for x in produced_ingredients_recipe]
+            random_produced_ingredient = random.choice(new_produced_ingredients_recipe)
+            print(f'random_produced_ingredient: {random_produced_ingredient}')
+
+            # Get a list of all ingreients
+            total_ingredients = []
+            total_ingredients.append(random_produced_ingredient)
+            query_text = query_result['queryText'].lower()
+            if not 'no' in query_text:
+                # append the user input ingredient
+                total_ingredients.append(query_result['parameters']['food-items'][0])
+
+            if len(dietary_restrictions) > 0:
+                allergy = dietary_restrictions[0]
+            else:
+                allergy = []
+
+            dish_name, ingredient_list, dish_image, dish_url = generate_recipe(total_ingredients, allergy)
+            
+            return { 
                 "fulfillmentMessages": [
                     {
                         "card": {
@@ -65,28 +146,10 @@ def webhook():
                     }
                 ]
             }
-        elif action == 'recipe.recipe-custom':
-            country = query_result['parameters']['geo-country']
-            year = datetime.now().year
-            produced_ingredients = get_country_production_prediction_model(country, year)
-            ingredients_for_recipe.append([item['Item'] for item in produced_ingredients])
-            items = ', '.join([f"{item['Item']}" for item in produced_ingredients]) 
-            return {
-                "fulfillmentMessages": f"Top 5 food items with the highest predicted production value in {year} of {country}: {items}. To help with creating waste-free recipes, are there any specific dietary needs or restrictions (i.e. gluten-free, vegetarian, sugar-free), if no, please type 'no'?"
-            }
-        elif action == 'recipe.recipe-custom':
-            dietary_restrictions.append(query_result['parameters']['dietary-restrictions'])
-            return{
-                "fulfillmentMessages": "Please provide more ingredients that you want to combine with, if no, please type 'no'"
-            }
-
-
-
+            
         
+        # Testing the webhook
         return jsonify({'fulfillmentText': 'Error: action is not recognized'})
 
-
-
-    
 if __name__ == '__main__':
     app.run(debug=True)

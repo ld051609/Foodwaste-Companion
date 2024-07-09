@@ -7,10 +7,18 @@ from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
 import csv
 from sklearn.preprocessing import StandardScaler
 
-dataset = './FAO-dataset.csv'
-df = pd.read_csv(dataset)
 
-def get_country_production_prediction_model(df, country, year):
+def get_country_production_prediction_model(country, year):
+    dataset = './FAO-dataset.csv'
+    df = pd.read_csv(dataset)
+    # Change all the country name to lower case
+    df['Area'] = df['Area'].str.lower()
+    # Change the input country name to lower case
+    country = country.lower()
+    # Check if the input country is in the dataset
+    if country not in df['Area'].unique():
+        return
+    # Filter the data based on the country
     filtered_df = df[df['Area'] == country]
     food_items = filtered_df['Item'].unique()
     my_list_dict = []
@@ -47,11 +55,12 @@ def get_country_production_prediction_model(df, country, year):
     sorted_list_dict = sorted(my_list_dict, key=lambda x: x[f'Production prediction in {future_year}'], reverse=True)
 
     # Return the top 5 food items with the highest predicted production value in the future year
-    return sorted_list_dict[:5]
+    key_food_items = [item['Item'] for item in sorted_list_dict[:3]]
+    return key_food_items
 
-# Example usage
-list = get_country_production_prediction_model(df, 'Afghanistan')
-
+# Sample usage
+# list = get_country_production_prediction_model('Viet Nam', 2025)
+# print(list)
 
 
 
