@@ -5,7 +5,7 @@ from food_api import generate_recipe
 from model import get_country_production_prediction_model
 from datetime import datetime
 import random
-
+import json
 app = Flask(__name__)
 CORS(app)
 
@@ -34,23 +34,42 @@ def webhook():
         fulfillment_messages = []
         for info in market_info:
             card_response = {
-                "card": {
-                    "title": info['name'],
-                    "subtitle": "Local Market",
-                    "imageUri": info['image_url'],
-                    "buttons": [
-                        {
-                            "text": "More Info",
-                            "postback": info['maps_url']
-                        }
+                "type": 'info',
+                "title": info['name'],
+                "subtitle": "Local Market",
+                "image": {
+                    "src": {
+                        "rawUrl": info['image_url']
+                    }
+                },
+                "actionLink": info['maps_url']
+            }
+            fulfillment_messages.append(card_response)
+            divider = {
+                "type": 'divider'
+            }
+            fulfillment_messages.append(divider)
+        res = {}
+        res['fulfillmentMessages'] = [
+            {
+                'text': {
+                    'text': [
+                        'Here are the local markets near you:'
+                    ]
+                }
+            },
+            {
+                'payload': {
+                    'richContent': [
+                        fulfillment_messages
                     ]
                 }
             }
-            fulfillment_messages.append(card_response)
-        
+        ]
         # Return the JSON response
-        return jsonify({"fulfillmentMessages": fulfillment_messages})
-
+        return json.dumps(
+            res
+        )        
     elif action == 'food-banks':
         address = query_result['parameters']['location']
         city = address.get('city')
@@ -60,23 +79,42 @@ def webhook():
         fulfillment_messages = []
         for info in market_info:
             card_response = {
-                "card": {
-                    "title": info['name'],
-                    "subtitle": "Local Food Bank",
-                    "imageUri": info['image_url'],
-                    "buttons": [
-                        {
-                            "text": "More Info",
-                            "postback": info['maps_url']
-                        }
+                "type": 'info',
+                "title": info['name'],
+                "subtitle": "Local Market",
+                "image": {
+                    "src": {
+                        "rawUrl": info['image_url']
+                    }
+                },
+                "actionLink": info['maps_url']
+            }
+            fulfillment_messages.append(card_response)
+            divider = {
+                "type": 'divider'
+            }
+            fulfillment_messages.append(divider)
+        res = {}
+        res['fulfillmentMessages'] = [
+            {
+                'text': {
+                    'text': [
+                        'Here are the food banks near you:'
+                    ]
+                }
+            },
+            {
+                'payload': {
+                    'richContent': [
+                        fulfillment_messages
                     ]
                 }
             }
-            fulfillment_messages.append(card_response)
-
+        ]
         # Return the JSON response
-        return jsonify({"fulfillmentMessages": fulfillment_messages})
-
+        return json.dumps(
+            res
+        ) 
     elif action == 'recipe - location':
         country = query_result['parameters']['geo-country']
         year = datetime.now().year
@@ -118,23 +156,39 @@ def webhook():
         allergy = dietary_restrictions[0] if dietary_restrictions else None
         dish_name, ingredient_list, dish_image, dish_url = generate_recipe(total_ingredients, allergy)
 
-        return jsonify({
-            "fulfillmentMessages": [
-                {
-                    "card": {
-                        "title": dish_name,
-                        "subtitle": ingredient_list,
-                        "imageUri": dish_image,
-                        "buttons": [
-                            {
-                                "text": "View Recipe",
-                                "postback": dish_url
-                            }
-                        ]
-                    }
+        fulfillment_messages = {
+            "type": 'info',
+            "title": dish_name,
+            "subtitle": ingredient_list,
+            "image": {
+                "src": {
+                    "rawUrl": dish_image
                 }
-            ]
-        })
+            },
+            "actionLink": dish_url
+
+        }
+        print(f'fulfillment_messages: {fulfillment_messages}')
+        res = {}
+        res['fulfillmentMessages'] = [
+            {
+                'text': {
+                    'text': [
+                        'Custom Recipe:'
+                    ]
+                }
+            },
+            {
+                'payload': {
+                    'richContent': [
+                        [fulfillment_messages]
+                    ]
+                }
+            }
+        ]
+        return json.dumps(
+            res
+        )
 
     # Default response for unrecognized actions
     return jsonify({'fulfillmentText': 'Error: action is not recognized'})
