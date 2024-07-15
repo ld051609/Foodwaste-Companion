@@ -3,16 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>FoodWaste Companion Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 200px 50px;
+            box-sizing: border-box;
+        }
+        .title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .features {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .features li {
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .df-messenger-wrapper {
+            margin-top: 20px;
+        }
+        .start-message {
+            font-style: italic;
+            color: #666;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1 class="title">FoodWaste Companion Chatbot</h1>
+        <ul class="features">
+            <li>Locate nearby food markets</li>
+            <li>Find food donation centers nearby</li>
+            <li>Create custom recipes based on local produce</li>
+        </ul>
+        <df-messenger
+            intent="WELCOME"
+            chat-title="remove-hunger"
+            agent-id="1261b160-d4b8-417f-a19c-81ec2313dbe2"
+            language-code="en"
+        ></df-messenger>
+        <p class="start-message">Click on the icon on the left-hand side to start using the chatbot</p>
+    </div>
+
     <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
-    <df-messenger
-        intent="WELCOME"
-        chat-title="remove-hunger"
-        agent-id="1261b160-d4b8-417f-a19c-81ec2313dbe2"
-        language-code="en"
-    ></df-messenger>
-    
 </body>
 </html>
