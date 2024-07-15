@@ -47,12 +47,12 @@ def webhook():
                 }
             }
             fulfillment_messages.append(card_response)
-
+        
         # Return the JSON response
         return jsonify({"fulfillmentMessages": fulfillment_messages})
 
     elif action == 'food-banks':
-        address = query_result['parameters']['location'][0]
+        address = query_result['parameters']['location']
         city = address.get('city')
         street_address = address.get('street-address')
         print(address)
@@ -97,7 +97,8 @@ def webhook():
     elif action == 'recipe - dietaryRestrictions':
         # Clear previous data and store new data
         dietary_restrictions.clear()
-        dietary_restrictions.extend(query_result['parameters']['food-restriction'])
+        if query_result['parameters'].get('food-restriction'):
+            dietary_restrictions.extend(query_result['parameters']['food-restriction'])
         return jsonify({'fulfillmentText': 'Please provide ONE more ingredient that you want to combine with. If no, please type "no".'})
 
     elif action == 'recipe - generateCustomRecipe':
@@ -111,7 +112,7 @@ def webhook():
 
         total_ingredients = [random_produced_ingredient]
         query_text = query_result['queryText'].lower()
-        if 'no' not in query_text:
+        if 'no' not in query_text and query_result['parameters'].get('food-items'):
             total_ingredients.append(query_result['parameters']['food-items'][0])
 
         allergy = dietary_restrictions[0] if dietary_restrictions else None

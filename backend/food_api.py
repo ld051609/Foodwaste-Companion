@@ -13,10 +13,10 @@ def generate_recipe(food_items_str, allergic):
     food_items_str = ','.join(food_items_str)
 
 
-    if len(allergic) > 0:
-        request_url = f'https://api.edamam.com/search?q={food_items_str}&app_id={APP_ID}&app_key={APP_KEY}&from=1&to=2&health={allergic}'
-    else:
+    if allergic is None:
         request_url = f'https://api.edamam.com/search?q={food_items_str}&app_id={APP_ID}&app_key={APP_KEY}&from=1&to=2'
+    elif len(allergic) > 0:
+        request_url = f'https://api.edamam.com/search?q={food_items_str}&app_id={APP_ID}&app_key={APP_KEY}&from=1&to=2&health={allergic}'
 
     print(request_url)
     response = requests.get(request_url)

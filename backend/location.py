@@ -48,7 +48,7 @@ def get_local_food_market(street_address, city=None):
         return [{"error": f"Error occurred: {e}"}]
 
 
-def get_food_banks_nearby(street_address):
+def get_food_banks_nearby(street_address, city=None):
     try:
         GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
         geocode_url = f'https://maps.googleapis.com/maps/api/geocode/json?address={street_address}&key={GOOGLE_MAPS_API_KEY}'
